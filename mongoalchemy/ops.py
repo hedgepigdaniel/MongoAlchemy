@@ -91,7 +91,7 @@ class SaveOp(Operation):
         self.data = document.wrap()
         self.type = type(document)
         self.safe = safe
-        self.shard_key = document.shard_key
+        self.shard_key = document.__shard_key__
         # Deal with _id
         if '_id' not in self.data:
             self.data['_id'] = ObjectId()

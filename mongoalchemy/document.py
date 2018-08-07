@@ -132,7 +132,7 @@ class DocumentMeta(type):
 class Document(object):
     # __metaclass__ = DocumentMeta
 
-    shard_key = None
+    __shard_key__ = None
     ''' The field to specify the shard key for this collection if it is sharded. 
         For save operations it will look to see if this is set and use
         collection.insert/update instead of collection.save because cosmos DB does
