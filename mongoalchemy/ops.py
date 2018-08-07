@@ -91,6 +91,7 @@ class SaveOp(Operation):
         self.data = document.wrap()
         self.type = type(document)
         self.safe = safe
+        self.shard_key = document.shard_key
         # Deal with _id
         if '_id' not in self.data:
             self.data['_id'] = ObjectId()
@@ -100,7 +101,18 @@ class SaveOp(Operation):
     def execute(self):
         self.ensure_indexes()
         kwargs = safe_args(self.safe)
-        return self.collection.save(self.data, **kwargs)
+        if self.shard_key:
+            # to support sharded collections the save operation needs to provide the shard key.
+            if self.shard_key not in self.data:
+                raise InvalidUpdateException('Requires shard key {} to save'.format(self.shard_key))
+            _filter = {
+                '_id': self.data['_id'],
+                self.shard_key: self.data[self.shard_key]
+            }
+            kwargs['upsert'] = True
+            return self.collection.update(_filter, self.data, **kwargs)
+        else:
+            return self.collection.save(self.data, **kwargs)
 
 class RemoveOp(Operation):
     def __init__(self, trans_id, session, kind, safe, query):

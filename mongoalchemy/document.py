@@ -132,6 +132,13 @@ class DocumentMeta(type):
 class Document(object):
     # __metaclass__ = DocumentMeta
 
+    shard_key = None
+    ''' The field to specify the shard key for this collection if it is sharded. 
+        For save operations it will look to see if this is set and use
+        collection.insert/update instead of collection.save because cosmos DB does
+        not support collection.save
+    '''
+
     mongo_id = ObjectIdField(required=False, db_field='_id', on_update='ignore')
     ''' Default field for the mongo object ID (``_id`` in the database). This field
         is automatically set on objects when they are saved into the database.
@@ -222,7 +229,7 @@ class Document(object):
                 self._values[name] = Value(field, self, from_db=False)
             else:
                 self._values[name] = Value(field, self, from_db=False)
-
+            
         # Process any extra fields
         for k in kwargs:
             if k not in fields:
