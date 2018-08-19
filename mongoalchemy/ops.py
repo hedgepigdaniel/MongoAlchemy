@@ -137,6 +137,10 @@ class RemoveDocumentOp(Operation):
         self.id = None
         if obj.has_id():
             self.id = obj.mongo_id
+        self.shard_key = obj.__shard_key__
+        self.shard_key_value = None
+        if self.shard_key:
+            self.shard_key_value = getattr(obj, self.shard_key)
 
     def execute(self):
         if self.id is None:
@@ -146,7 +150,15 @@ class RemoveDocumentOp(Operation):
 
         collection = db[self.type.get_collection_name()]
         kwargs = safe_args(self.safe)
-        return collection.remove(self.id, **kwargs)
+        if self.shard_key:
+            # to support sharded collections the remove operation needs to provide the shard key.
+            _filter = {
+                '_id': self.id,
+                self.shard_key: self.shard_key_value,
+            }
+            return collection.remove(_filter, **kwargs)
+        else:
+            return collection.remove(self.id, **kwargs)
 
 def safe_args(safe):
     kwargs = {}
